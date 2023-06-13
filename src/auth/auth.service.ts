@@ -3,6 +3,7 @@ import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library'
 import * as argon from 'argon2'
 import to from 'await-to-js'
 import { DbService } from 'src/db/db.service'
+import { AccountValidationDto } from './dto/account-validation.dto'
 import { SignUpDto } from './dto/sign-up.dto'
 
 @Injectable()
@@ -26,5 +27,17 @@ export class AuthService {
         "There's an account registered with this email already"
       )
     }
+  }
+
+  public async validateAccountExistence({
+    email
+  }: AccountValidationDto): Promise<void> {
+    const user = await this._db.user.findUnique({ where: { email } })
+
+    if (!user) return
+
+    throw new ConflictException(
+      "There's an account registered with this email already"
+    )
   }
 }
