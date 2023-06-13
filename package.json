@@ -24,6 +24,7 @@
     "@nestjs/config": "^2.3.3",
     "@nestjs/core": "^9.0.0",
     "@nestjs/platform-express": "^9.0.0",
+    "@nestjs/swagger": "^6.3.0",
     "@prisma/client": "^4.15.0",
     "argon2": "^0.30.3",
     "await-to-js": "^3.0.0",
