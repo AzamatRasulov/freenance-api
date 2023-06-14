@@ -7,6 +7,7 @@ import {
   Post,
   Query
 } from '@nestjs/common'
+import { ApiTags } from '@nestjs/swagger'
 import { AuthService } from './auth.service'
 import { AccountValidationDto } from './dto/account-validation.dto'
 import { RefreshTokenDto } from './dto/refresh-token.dto'
@@ -15,6 +16,7 @@ import { SignUpDto } from './dto/sign-up.dto'
 import { TokenDtoTransformerPipe } from './pipes/token-dto-transformer.pipe'
 import { SignInResponse } from './types/sign-in.response'
 
+@ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
   constructor(private readonly _service: AuthService) {}
