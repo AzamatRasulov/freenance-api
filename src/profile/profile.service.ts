@@ -15,7 +15,12 @@ export class ProfileService {
       where: { id }
     })
 
-    return user
+    if (!user.avatar) return user
+
+    return {
+      ...user,
+      avatar: `/${process.env['AVATARS_FOLDER']}/${user.avatar as string}`
+    }
   }
 
   public async update(
