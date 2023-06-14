@@ -89,6 +89,10 @@ export class AuthService {
     )
   }
 
+  public decodeToken(token: string): JwtPayload {
+    return this._jwt.decode(token) as JwtPayload
+  }
+
   private async _generateTokens(
     userId: number,
     email: string
