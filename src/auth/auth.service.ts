@@ -10,8 +10,10 @@ import * as argon from 'argon2'
 import to from 'await-to-js'
 import { DbService } from 'src/db/db.service'
 import { AccountValidationDto } from './dto/account-validation.dto'
+import { RefreshTokenDto } from './dto/refresh-token.dto'
 import { SignInDto } from './dto/sign-in.dto'
 import { SignUpDto } from './dto/sign-up.dto'
+import { JwtPayload } from './types/jwt-payload'
 import { SignInResponse } from './types/sign-in.response'
 
 @Injectable()
@@ -53,25 +55,65 @@ export class AuthService {
     )
   }
 
-  public async signIn({ email, password }: SignInDto): Promise<SignInResponse> {
+  public async signIn(
+    { email, password }: SignInDto,
+    securityKey: 'password' | 'refreshToken' = 'password'
+  ): Promise<SignInResponse> {
     const user = await this._db.user.findUnique({ where: { email } })
 
-    if (!user || !(await argon.verify(user.password, password))) {
+    if (!user || !(await argon.verify(user[securityKey] as string, password))) {
       throw new ForbiddenException('Incorrect credentials')
     }
 
-    return {
-      accessToken: await this._generateAccessToken(user.id, user.email)
-    }
+    const tokens = await this._generateTokens(user.id, user.email)
+
+    await this._storeRefreshToken(user.id, tokens.refreshToken)
+
+    return tokens
   }
 
-  private async _generateAccessToken(
+  public async refreshToken({
+    refreshToken
+  }: RefreshTokenDto): Promise<SignInResponse> {
+    const [error, payload] = await to<JwtPayload>(
+      this._jwt.verifyAsync(refreshToken, {
+        secret: this._config.get('JWT_REFRESH_SECRET')
+      })
+    )
+
+    if (error) throw new ForbiddenException('Invalid token')
+
+    return this.signIn(
+      { email: payload.email, password: refreshToken },
+      'refreshToken'
+    )
+  }
+
+  private async _generateTokens(
     userId: number,
     email: string
-  ): Promise<string> {
-    return this._jwt.signAsync(
-      { sub: userId, email },
-      { expiresIn: '10m', secret: this._config.get('JWT_SECRET') }
-    )
+  ): Promise<SignInResponse> {
+    const [accessToken, refreshToken] = await Promise.all([
+      this._jwt.signAsync(
+        { sub: userId, email },
+        { expiresIn: '10m', secret: this._config.get('JWT_ACCESS_SECRET') }
+      ),
+      this._jwt.signAsync(
+        { sub: userId, email },
+        { expiresIn: '1w', secret: this._config.get('JWT_REFRESH_SECRET') }
+      )
+    ])
+
+    return { accessToken, refreshToken }
+  }
+
+  private async _storeRefreshToken(
+    userId: number,
+    refreshToken: string
+  ): Promise<void> {
+    await this._db.user.update({
+      where: { id: userId },
+      data: { refreshToken: await argon.hash(refreshToken) }
+    })
   }
 }

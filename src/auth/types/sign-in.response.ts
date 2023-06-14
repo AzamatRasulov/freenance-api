@@ -1,1 +1,1 @@
-export type SignInResponse = Record<'accessToken', string>
+export type SignInResponse = Record<'accessToken' | 'refreshToken', string>

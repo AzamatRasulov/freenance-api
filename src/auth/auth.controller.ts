@@ -1,8 +1,18 @@
-import { Body, Controller, Get, HttpCode, Post, Query } from '@nestjs/common'
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Post,
+  Query
+} from '@nestjs/common'
 import { AuthService } from './auth.service'
 import { AccountValidationDto } from './dto/account-validation.dto'
+import { RefreshTokenDto } from './dto/refresh-token.dto'
 import { SignInDto } from './dto/sign-in.dto'
 import { SignUpDto } from './dto/sign-up.dto'
+import { TokenDtoTransformerPipe } from './pipes/token-dto-transformer.pipe'
 import { SignInResponse } from './types/sign-in.response'
 
 @Controller('auth')
@@ -14,14 +24,18 @@ export class AuthController {
     return this._service.signUp(dto)
   }
 
-  @HttpCode(200)
+  @HttpCode(HttpStatus.OK)
   @Post('sign-up/validate')
   public async validate(@Body() dto: AccountValidationDto): Promise<void> {
     return this._service.validateAccountExistence(dto)
   }
 
-  @Get('sign-in')
-  public async signIn(@Query() dto: SignInDto): Promise<SignInResponse> {
+  @Get('token')
+  public async signIn(
+    @Query(TokenDtoTransformerPipe)
+    dto: SignInDto | RefreshTokenDto
+  ): Promise<SignInResponse> {
+    if (dto instanceof RefreshTokenDto) return this._service.refreshToken(dto)
     return this._service.signIn(dto)
   }
 }
