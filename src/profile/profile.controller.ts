@@ -1,28 +1,19 @@
-import {
-  Controller,
-  ExecutionContext,
-  Get,
-  UseGuards,
-  createParamDecorator
-} from '@nestjs/common'
+import { Controller, Get, HttpStatus, UseGuards } from '@nestjs/common'
 import { AuthGuard } from '@nestjs/passport'
+import { ApiResponse, ApiTags } from '@nestjs/swagger'
 import { User } from '@prisma/client'
-import { Request } from 'express'
+import { BearerDecoded } from 'src/auth/decorators/bearer-decoded.decorator'
 import { JwtPayload } from 'src/auth/types/jwt-payload'
+import { ProfileDto } from 'src/core/dto/profile.dto'
 import { ProfileService } from './profile.service'
 
-export const BearerDecoded = createParamDecorator(
-  (_, context: ExecutionContext) => {
-    const request: Request = context.switchToHttp().getRequest()
-    return request.user
-  }
-)
-
+@ApiTags('Profile')
 @UseGuards(AuthGuard('jwt'))
 @Controller()
 export class ProfileController {
   constructor(private readonly _service: ProfileService) {}
 
+  @ApiResponse({ status: HttpStatus.OK, type: ProfileDto })
   @Get('me')
   public async get(
     @BearerDecoded() jwtPayload: JwtPayload
