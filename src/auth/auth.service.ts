@@ -24,10 +24,22 @@ export class AuthService {
     private readonly _config: ConfigService
   ) {}
 
-  public async signUp({ email, password }: SignUpDto): Promise<number> {
+  public async validateAccountExistence({
+    email
+  }: AccountValidationDto): Promise<void> {
+    const user = await this._db.user.findUnique({ where: { email } })
+
+    if (!user) return
+
+    throw new ConflictException(
+      "There's an account registered with this email already"
+    )
+  }
+
+  public async signUp({ password, ...dto }: SignUpDto): Promise<number> {
     const [error, user] = await to(
       this._db.user.create({
-        data: { email, password: await argon.hash(password) }
+        data: { ...dto, password: await argon.hash(password) }
       })
     )
 
@@ -41,18 +53,6 @@ export class AuthService {
         "There's an account registered with this email already"
       )
     }
-  }
-
-  public async validateAccountExistence({
-    email
-  }: AccountValidationDto): Promise<void> {
-    const user = await this._db.user.findUnique({ where: { email } })
-
-    if (!user) return
-
-    throw new ConflictException(
-      "There's an account registered with this email already"
-    )
   }
 
   public async signIn(
@@ -87,6 +87,10 @@ export class AuthService {
       { email: payload.email, password: refreshToken },
       'refreshToken'
     )
+  }
+
+  public decodeToken(token: string): JwtPayload {
+    return this._jwt.decode(token) as JwtPayload
   }
 
   private async _generateTokens(
