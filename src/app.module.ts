@@ -4,6 +4,7 @@ import { AuthModule } from './auth/auth.module'
 import { DbModule } from './db/db.module'
 import { ProfileModule } from './profile/profile.module'
 import { SettingsModule } from './settings/settings.module'
+import { ClientsModule } from './clients/clients.module';
 
 @Module({
   imports: [
@@ -11,7 +12,8 @@ import { SettingsModule } from './settings/settings.module'
     ConfigModule.forRoot({ isGlobal: true }),
     DbModule,
     ProfileModule,
-    SettingsModule
+    SettingsModule,
+    ClientsModule
   ]
 })
 export class AppModule {}

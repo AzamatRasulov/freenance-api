@@ -1,5 +1,6 @@
 import {
   Body,
+  ConflictException,
   Controller,
   Get,
   HttpCode,
@@ -8,6 +9,8 @@ import {
   Query
 } from '@nestjs/common'
 import { ApiTags } from '@nestjs/swagger'
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime'
+import to from 'await-to-js'
 import { AuthService } from './auth.service'
 import { AccountValidationDto } from './dto/account-validation.dto'
 import { RefreshTokenDto } from './dto/refresh-token.dto'
@@ -23,7 +26,17 @@ export class AuthController {
 
   @Post('sign-up')
   public async signUp(@Body() dto: SignUpDto): Promise<number> {
-    return this._service.signUp(dto)
+    const [error, id] = await to<number, PrismaClientKnownRequestError>(
+      this._service.signUp(dto)
+    )
+
+    if (!error) return id
+
+    if (error.code === 'P2002') {
+      throw new ConflictException(
+        "There's an account registered with this email already"
+      )
+    }
   }
 
   @HttpCode(HttpStatus.OK)

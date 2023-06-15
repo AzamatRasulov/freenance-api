@@ -23,11 +23,14 @@ model User {
   avatar  String?
   address UserAddress?
 
+  clients Client[]
+
   @@map("users")
 }
 
 model UserAddress {
-  id       Int    @id @default(autoincrement())
+  id Int @id @default(autoincrement())
+
   street   String
   city     String
   postCode String
@@ -37,4 +40,36 @@ model UserAddress {
   userId Int  @unique
 
   @@map("user-addresses")
+}
+
+model Client {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  logo     String?
+  name     String
+  email    String
+  comment  String?
+  address  ClientAddress?
+  turnover Float          @default(0)
+
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId Int
+
+  @@map("clients")
+}
+
+model ClientAddress {
+  id Int @id @default(autoincrement())
+
+  street   String
+  city     String
+  postCode String
+  country  String
+
+  client   Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  clientId Int    @unique
+
+  @@map("client-addresses")
 }
