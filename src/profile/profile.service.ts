@@ -10,9 +10,19 @@ export class ProfileService {
   public async get(
     id: number
   ): Promise<Omit<User, 'password' | 'refreshToken'>> {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { password, refreshToken, ...user } = await this._db.user.findUnique({
-      where: { id }
+    const user = await this._db.user.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        createdAt: true,
+        updatedAt: true,
+        email: true,
+        name: true,
+        avatar: true,
+        address: {
+          select: { street: true, city: true, postCode: true, country: true }
+        }
+      }
     })
 
     if (!user.avatar) return user
