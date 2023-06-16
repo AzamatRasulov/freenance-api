@@ -4,10 +4,11 @@ import {
   NotFoundException,
   UnprocessableEntityException
 } from '@nestjs/common'
-import { Invoice, InvoiceStatus, Prisma } from '@prisma/client'
+import { Client, Invoice, InvoiceStatus, Prisma } from '@prisma/client'
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime'
 import to from 'await-to-js'
 import { ClientsService } from 'src/clients/clients.service'
+import { CreateClientDto } from 'src/clients/dto/create-client.dto'
 import { DbService } from 'src/db/db.service'
 import { CreateInvoiceDto } from './dto/create-invoice.dto'
 import { GetInvoicesQueryDto } from './dto/get-invoices-query.dto'
@@ -44,9 +45,7 @@ export class InvoicesService {
       select: { id: true }
     })
 
-    const [, client] = await to(this._clients.findOne('name', dto.to.name))
-
-    if (!client) await this._clients.create(userId, null, dto.to)
+    await this._upsertClient(userId, dto.to, invoice.id)
 
     return invoice
   }
@@ -112,6 +111,8 @@ export class InvoicesService {
         }
       }
     })
+
+    await this._upsertClient(userId, dto.to, invoice.id)
   }
 
   public async delete(userId: number, id: number): Promise<void> {
@@ -163,6 +164,22 @@ export class InvoicesService {
     await this._clients.addToTurnover(invoice.to.name, invoice.terms.amountDue)
   }
 
+  private async _upsertClient(
+    userId: number,
+    dto: Omit<CreateClientDto, 'logo'>,
+    invoiceId: number
+  ): Promise<void> {
+    let [, client]: [void, Partial<Client>] = await to(
+      this._clients.findOne('name', dto.name)
+    )
+
+    if (!client) client = await this._clients.create(userId, null, dto)
+
+    await this._clients.update(userId, client.id, undefined, {
+      lastInvoiceId: invoiceId
+    })
+  }
+
   private _generateCode(client: string): string {
     const firstLetter = client.slice(0, 1)
     const middleLetterIndex = Math.floor(client.length / 2)
@@ -171,7 +188,7 @@ export class InvoicesService {
       .toUpperCase()
     const dateParts = new Date().toISOString().split('T')
     const date =
-      dateParts.at(0).replace(/-/gi, '') +
+      dateParts.at(0).replace(/-/gi, '').slice(4) +
       dateParts.at(1).split('.').at(1).replace('Z', '')
 
     return firstLetter + middleLetter + date
