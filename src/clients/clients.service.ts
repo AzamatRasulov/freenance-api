@@ -31,11 +31,13 @@ export class ClientsService {
 
   public async findAll(
     userId: number,
-    { country }: GetClientsQueryDto
+    { country, limit }: GetClientsQueryDto
   ): Promise<Client[]> {
     const clients = await this._db.client.findMany({
+      take: limit,
       where: { user: { id: userId }, address: { country } },
-      include: { address: true }
+      include: { address: true },
+      orderBy: { createdAt: 'desc' }
     })
 
     return clients.map(client => this._buildLogoPath(client))
