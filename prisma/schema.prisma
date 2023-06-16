@@ -48,12 +48,13 @@ model Client {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  logo     String?
-  name     String         @unique
-  email    String
-  comment  String?
-  address  ClientAddress?
-  turnover Float          @default(0)
+  logo          String?
+  name          String         @unique
+  email         String
+  comment       String?
+  address       ClientAddress?
+  turnover      Float          @default(0)
+  lastInvoiceId Int?
 
   user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId Int

@@ -12,4 +12,5 @@ export class GetClientDto implements Entity {
   public comment: string
   public address: AddressDto
   public turnover: number
+  public lastInvoiceId: number
 }
