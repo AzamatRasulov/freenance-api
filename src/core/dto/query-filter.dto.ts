@@ -5,5 +5,5 @@ export class QueryFilterDto {
   @IsNumber()
   @IsOptional()
   @Transform(limit => +limit.value || undefined)
-  public limit: number
+  public limit?: number
 }

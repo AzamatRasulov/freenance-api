@@ -15,7 +15,13 @@ import {
   UseInterceptors
 } from '@nestjs/common'
 import { AuthGuard } from '@nestjs/passport'
-import { ApiBody, ApiConsumes, ApiResponse, ApiTags } from '@nestjs/swagger'
+import {
+  ApiBearerAuth,
+  ApiBody,
+  ApiConsumes,
+  ApiResponse,
+  ApiTags
+} from '@nestjs/swagger'
 import { Client } from '@prisma/client'
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime'
 import to from 'await-to-js'
@@ -32,6 +38,7 @@ import { ParseLogoPipe } from './pipes/parse-logo.pipe'
 
 @ApiTags('Clients')
 @UseGuards(AuthGuard('jwt'))
+@ApiBearerAuth('jwt')
 @Controller('clients')
 export class ClientsController {
   constructor(private readonly _service: ClientsService) {}

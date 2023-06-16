@@ -1,6 +1,6 @@
 import { Controller, Get, HttpStatus, UseGuards } from '@nestjs/common'
 import { AuthGuard } from '@nestjs/passport'
-import { ApiResponse, ApiTags } from '@nestjs/swagger'
+import { ApiBearerAuth, ApiResponse, ApiTags } from '@nestjs/swagger'
 import { User } from '@prisma/client'
 import { BearerDecoded } from 'src/auth/decorators/bearer-decoded.decorator'
 import { JwtPayload } from 'src/auth/types/jwt-payload'
@@ -9,6 +9,7 @@ import { ProfileService } from './profile.service'
 
 @ApiTags('Profile')
 @UseGuards(AuthGuard('jwt'))
+@ApiBearerAuth('jwt')
 @Controller()
 export class ProfileController {
   constructor(private readonly _service: ProfileService) {}
