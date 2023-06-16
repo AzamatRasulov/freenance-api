@@ -9,6 +9,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   UploadedFile,
   UseGuards,
   UseInterceptors
@@ -24,6 +25,7 @@ import { PostResponseDto } from 'src/core/dto/post.response.dto'
 import { ClientsService } from './clients.service'
 import { CreateClientDto } from './dto/create-client.dto'
 import { GetClientDto } from './dto/get-client.dto'
+import { GetClientsQueryDto } from './dto/get-clients-query.dto'
 import { UpdateClientDto } from './dto/update-client.dto'
 import { LogoInterceptor } from './interceptors/logo.interceptor'
 import { ParseLogoPipe } from './pipes/parse-logo.pipe'
@@ -54,8 +56,11 @@ export class ClientsController {
     type: GetClientDto,
     isArray: true
   })
-  public async findAll(@BearerDecoded() user: JwtPayload): Promise<Client[]> {
-    return this._service.findAll(user.sub)
+  public async findAll(
+    @BearerDecoded() user: JwtPayload,
+    @Query() query: GetClientsQueryDto
+  ): Promise<Client[]> {
+    return this._service.findAll(user.sub, query)
   }
 
   @Get(':id')

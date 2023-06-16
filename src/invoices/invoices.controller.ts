@@ -9,6 +9,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   UseGuards
 } from '@nestjs/common'
 import { AuthGuard } from '@nestjs/passport'
@@ -21,6 +22,7 @@ import { JwtPayload } from 'src/auth/types/jwt-payload'
 import { PostResponseDto } from 'src/core/dto/post.response.dto'
 import { CreateInvoiceDto } from './dto/create-invoice.dto'
 import { GetInvoiceDto } from './dto/get-invoice.dto'
+import { GetInvoicesQueryDto } from './dto/get-invoices-query.dto'
 import { UpdateInvoiceDto } from './dto/update-invoice.dto'
 import { InvoicesService } from './invoices.service'
 
@@ -46,8 +48,11 @@ export class InvoicesController {
     type: GetInvoiceDto,
     isArray: true
   })
-  public async findAll(@BearerDecoded() user: JwtPayload): Promise<Invoice[]> {
-    return this._service.findAll(user.sub)
+  public async findAll(
+    @BearerDecoded() user: JwtPayload,
+    @Query() query: GetInvoicesQueryDto
+  ): Promise<Invoice[]> {
+    return this._service.findAll(user.sub, query)
   }
 
   @Get(':id')

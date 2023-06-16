@@ -4,6 +4,7 @@ import { existsSync, unlinkSync } from 'fs'
 import { join } from 'path'
 import { DbService } from 'src/db/db.service'
 import { CreateClientDto } from './dto/create-client.dto'
+import { GetClientsQueryDto } from './dto/get-clients-query.dto'
 import { UpdateClientDto } from './dto/update-client.dto'
 
 @Injectable()
@@ -28,9 +29,12 @@ export class ClientsService {
     return client
   }
 
-  public async findAll(userId: number): Promise<Client[]> {
+  public async findAll(
+    userId: number,
+    { country }: GetClientsQueryDto
+  ): Promise<Client[]> {
     const clients = await this._db.client.findMany({
-      where: { user: { id: userId } },
+      where: { user: { id: userId }, address: { country } },
       include: { address: true }
     })
 

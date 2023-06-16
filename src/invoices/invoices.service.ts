@@ -10,6 +10,7 @@ import to from 'await-to-js'
 import { ClientsService } from 'src/clients/clients.service'
 import { DbService } from 'src/db/db.service'
 import { CreateInvoiceDto } from './dto/create-invoice.dto'
+import { GetInvoicesQueryDto } from './dto/get-invoices-query.dto'
 import { InvoiceItem } from './dto/invoice.item.dto'
 import { UpdateInvoiceDto } from './dto/update-invoice.dto'
 
@@ -50,9 +51,12 @@ export class InvoicesService {
     return invoice
   }
 
-  public async findAll(userId: number): Promise<Invoice[]> {
+  public async findAll(
+    userId: number,
+    { status, client }: GetInvoicesQueryDto
+  ): Promise<Invoice[]> {
     return this._db.invoice.findMany({
-      where: { user: { id: userId } },
+      where: { user: { id: userId }, status: status, to: { name: client } },
       include: {
         from: { include: { address: true } },
         to: { include: { address: true } },
