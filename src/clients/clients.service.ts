@@ -37,9 +37,12 @@ export class ClientsService {
     return clients.map(client => this._buildLogoPath(client))
   }
 
-  public async findOne(id: number): Promise<Client> {
+  public async findOne(
+    key: 'id' | 'name',
+    value: string | number
+  ): Promise<Client> {
     const client = await this._db.client.findUniqueOrThrow({
-      where: { id },
+      where: { [key]: value },
       include: { address: true }
     })
 
@@ -77,8 +80,19 @@ export class ClientsService {
     this._deleteLogo(deletedClient.logo)
   }
 
-  private _buildLogoPath({ logo, ...client }: Client): Client {
-    return { ...client, logo: join('/', process.env['LOGOS_FOLDER'], logo) }
+  public async addToTurnover(name: string, amount: number): Promise<void> {
+    await this._db.client.update({
+      where: { name },
+      data: { turnover: { increment: amount } }
+    })
+  }
+
+  private _buildLogoPath(client: Client): Client {
+    if (!client.logo) return client
+    return {
+      ...client,
+      logo: join('/', process.env['LOGOS_FOLDER'], client.logo)
+    }
   }
 
   private _deleteLogo(filename: string): void {

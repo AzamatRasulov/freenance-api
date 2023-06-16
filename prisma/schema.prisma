@@ -49,7 +49,7 @@ model Client {
   updatedAt DateTime @updatedAt
 
   logo     String?
-  name     String
+  name     String         @unique
   email    String
   comment  String?
   address  ClientAddress?
@@ -80,15 +80,22 @@ model Invoice {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  code  String           @unique
-  from  InvoiceSender?
-  to    InvoiceReceiver?
-  terms InvoiceTerms?
+  code   String           @unique
+  status InvoiceStatus
+  from   InvoiceSender?
+  to     InvoiceReceiver?
+  terms  InvoiceTerms?
 
   user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId Int
 
   @@map("invoices")
+}
+
+enum InvoiceStatus {
+  Draft
+  Pending
+  Paid
 }
 
 model InvoiceSender {

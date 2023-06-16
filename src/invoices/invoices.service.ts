@@ -1,5 +1,13 @@
-import { ForbiddenException, Injectable } from '@nestjs/common'
-import { Invoice, Prisma } from '@prisma/client'
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+  UnprocessableEntityException
+} from '@nestjs/common'
+import { Invoice, InvoiceStatus, Prisma } from '@prisma/client'
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime'
+import to from 'await-to-js'
+import { ClientsService } from 'src/clients/clients.service'
 import { DbService } from 'src/db/db.service'
 import { CreateInvoiceDto } from './dto/create-invoice.dto'
 import { InvoiceItem } from './dto/invoice.item.dto'
@@ -7,16 +15,20 @@ import { UpdateInvoiceDto } from './dto/update-invoice.dto'
 
 @Injectable()
 export class InvoicesService {
-  constructor(private readonly _db: DbService) {}
+  constructor(
+    private readonly _db: DbService,
+    private readonly _clients: ClientsService
+  ) {}
 
   public async create(
     userId: number,
     dto: CreateInvoiceDto
   ): Promise<Partial<Invoice>> {
-    return this._db.invoice.create({
+    const invoice = await this._db.invoice.create({
       data: {
         ...dto,
         code: this._generateCode(dto.to.name),
+        status: InvoiceStatus.Draft,
         from: { create: { address: { create: dto.from.address } } },
         to: { create: { ...dto.to, address: { create: dto.to.address } } },
         terms: {
@@ -30,6 +42,12 @@ export class InvoicesService {
       },
       select: { id: true }
     })
+
+    const [, client] = await to(this._clients.findOne('name', dto.to.name))
+
+    if (!client) await this._clients.create(userId, null, dto.to)
+
+    return invoice
   }
 
   public async findAll(userId: number): Promise<Invoice[]> {
@@ -59,12 +77,22 @@ export class InvoicesService {
     id: number,
     dto: UpdateInvoiceDto
   ): Promise<void> {
-    const invoice = await this._db.invoice.findUniqueOrThrow({
-      where: { id },
-      include: { terms: true }
-    })
+    const [error, invoice] = await to<Invoice, PrismaClientKnownRequestError>(
+      this._db.invoice.findUniqueOrThrow({
+        where: { id },
+        include: { terms: true }
+      })
+    )
+
+    if (error?.code === 'P2025') {
+      throw new NotFoundException('Invoice not found')
+    }
 
     if (invoice.userId !== userId) throw new ForbiddenException()
+
+    if (invoice.status === 'Paid') {
+      throw new ForbiddenException('Cannot edit paid invoice')
+    }
 
     await this._db.invoice.update({
       where: { id },
@@ -91,13 +119,56 @@ export class InvoicesService {
     await this._db.invoice.delete({ where: { id } })
   }
 
+  public async send(userId: number, id: number): Promise<void> {
+    const invoice = await this._db.invoice.findUnique({ where: { id } })
+
+    if (!invoice) throw new NotFoundException()
+    if (invoice.userId !== userId) throw new ForbiddenException()
+    if (invoice.status !== 'Draft') {
+      throw new UnprocessableEntityException('Invoice already sent')
+    }
+
+    await this._db.invoice.update({
+      where: { id },
+      data: { status: InvoiceStatus.Pending }
+    })
+  }
+
+  public async complete(userId: number, id: number): Promise<void> {
+    const invoice = await this._db.invoice.findUnique({
+      where: { id },
+      include: { to: true, terms: true }
+    })
+
+    if (!invoice) throw new NotFoundException()
+    if (invoice.userId !== userId) throw new ForbiddenException()
+
+    if (invoice.status === 'Draft') {
+      throw new UnprocessableEntityException('Invoice cannot be completed yet')
+    }
+
+    if (invoice.status === 'Paid') {
+      throw new UnprocessableEntityException('Invoice is already paid')
+    }
+
+    await this._db.invoice.update({
+      where: { id },
+      data: { status: InvoiceStatus.Paid }
+    })
+
+    await this._clients.addToTurnover(invoice.to.name, invoice.terms.amountDue)
+  }
+
   private _generateCode(client: string): string {
     const firstLetter = client.slice(0, 1)
     const middleLetterIndex = Math.floor(client.length / 2)
     const middleLetter = client
       .slice(middleLetterIndex, middleLetterIndex + 1)
       .toUpperCase()
-    const date = new Date().toISOString().split('T').at(0).replace(/-/gi, '')
+    const dateParts = new Date().toISOString().split('T')
+    const date =
+      dateParts.at(0).replace(/-/gi, '') +
+      dateParts.at(1).split('.').at(1).replace('Z', '')
 
     return firstLetter + middleLetter + date
   }

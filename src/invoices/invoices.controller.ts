@@ -73,13 +73,7 @@ export class InvoicesController {
     @BearerDecoded() user: JwtPayload,
     @Body() dto: UpdateInvoiceDto
   ): Promise<void> {
-    const [error] = await to<void, PrismaClientKnownRequestError>(
-      this._service.update(user.sub, +id, dto)
-    )
-
-    if (error?.code === 'P2025') {
-      throw new NotFoundException('Invoice not found')
-    }
+    return this._service.update(user.sub, +id, dto)
   }
 
   @Delete(':id')
@@ -90,5 +84,25 @@ export class InvoicesController {
     @Param('id') id: number
   ): Promise<void> {
     return this._service.delete(user.sub, +id)
+  }
+
+  @Post(':id/send')
+  @ApiResponse({ status: HttpStatus.NO_CONTENT, description: 'No content' })
+  @HttpCode(HttpStatus.NO_CONTENT)
+  public async send(
+    @BearerDecoded() user: JwtPayload,
+    @Param('id') id: number
+  ): Promise<void> {
+    return this._service.send(user.sub, +id)
+  }
+
+  @Post(':id/complete')
+  @ApiResponse({ status: HttpStatus.NO_CONTENT, description: 'No content' })
+  @HttpCode(HttpStatus.NO_CONTENT)
+  public async complete(
+    @BearerDecoded() user: JwtPayload,
+    @Param('id') id: number
+  ): Promise<void> {
+    return this._service.complete(user.sub, +id)
   }
 }

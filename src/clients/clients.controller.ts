@@ -62,7 +62,7 @@ export class ClientsController {
   @ApiResponse({ status: HttpStatus.OK, type: GetClientDto })
   public async findOne(@Param('id') id: number): Promise<Client> {
     const [error, client] = await to<Client, PrismaClientKnownRequestError>(
-      this._service.findOne(+id)
+      this._service.findOne('id', +id)
     )
 
     if (error?.code === 'P2025') throw new NotFoundException('Client not found')
