@@ -23,7 +23,8 @@ model User {
   avatar  String?
   address UserAddress?
 
-  clients Client[]
+  clients  Client[]
+  invoices Invoice[]
 
   @@map("users")
 }
@@ -48,7 +49,7 @@ model Client {
   updatedAt DateTime @updatedAt
 
   logo     String?
-  name     String
+  name     String         @unique
   email    String
   comment  String?
   address  ClientAddress?
@@ -72,4 +73,93 @@ model ClientAddress {
   clientId Int    @unique
 
   @@map("client-addresses")
+}
+
+model Invoice {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  code   String           @unique
+  status InvoiceStatus
+  from   InvoiceSender?
+  to     InvoiceReceiver?
+  terms  InvoiceTerms?
+
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId Int
+
+  @@map("invoices")
+}
+
+enum InvoiceStatus {
+  Draft
+  Pending
+  Paid
+}
+
+model InvoiceSender {
+  id Int @id @default(autoincrement())
+
+  address InvoiceSenderAddress?
+
+  invoice   Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  invoiceId Int     @unique
+
+  @@map("invoice-senders")
+}
+
+model InvoiceSenderAddress {
+  id Int @id @default(autoincrement())
+
+  street   String
+  city     String
+  postCode String
+  country  String
+
+  invoiceSender   InvoiceSender @relation(fields: [invoiceSenderId], references: [id], onDelete: Cascade)
+  invoiceSenderId Int           @unique
+
+  @@map("invoice-sender-addresses")
+}
+
+model InvoiceReceiver {
+  id Int @id @default(autoincrement())
+
+  name    String
+  email   String
+  address InvoiceReceiverAddress?
+
+  invoice   Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  invoiceId Int     @unique
+
+  @@map("invoice-receivers")
+}
+
+model InvoiceReceiverAddress {
+  id Int @id @default(autoincrement())
+
+  street   String
+  city     String
+  postCode String
+  country  String
+
+  invoiceReceiver   InvoiceReceiver @relation(fields: [invoiceReceiverId], references: [id], onDelete: Cascade)
+  invoiceReceiverId Int             @unique
+
+  @@map("invoice-receiver-addresses")
+}
+
+model InvoiceTerms {
+  id Int @id @default(autoincrement())
+
+  dueDate     DateTime
+  description String?
+  items       Json[]
+  amountDue   Float
+
+  invoice   Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  invoiceId Int     @unique
+
+  @@map("invoice-terms")
 }

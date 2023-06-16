@@ -4,6 +4,7 @@ import { existsSync, unlinkSync } from 'fs'
 import { join } from 'path'
 import { DbService } from 'src/db/db.service'
 import { CreateClientDto } from './dto/create-client.dto'
+import { GetClientsQueryDto } from './dto/get-clients-query.dto'
 import { UpdateClientDto } from './dto/update-client.dto'
 
 @Injectable()
@@ -28,18 +29,24 @@ export class ClientsService {
     return client
   }
 
-  public async findAll(userId: number): Promise<Client[]> {
+  public async findAll(
+    userId: number,
+    { country }: GetClientsQueryDto
+  ): Promise<Client[]> {
     const clients = await this._db.client.findMany({
-      where: { user: { id: userId } },
+      where: { user: { id: userId }, address: { country } },
       include: { address: true }
     })
 
     return clients.map(client => this._buildLogoPath(client))
   }
 
-  public async findOne(id: number): Promise<Client> {
+  public async findOne(
+    key: 'id' | 'name',
+    value: string | number
+  ): Promise<Client> {
     const client = await this._db.client.findUniqueOrThrow({
-      where: { id },
+      where: { [key]: value },
       include: { address: true }
     })
 
@@ -77,8 +84,19 @@ export class ClientsService {
     this._deleteLogo(deletedClient.logo)
   }
 
-  private _buildLogoPath({ logo, ...client }: Client): Client {
-    return { ...client, logo: join('/', process.env['LOGOS_FOLDER'], logo) }
+  public async addToTurnover(name: string, amount: number): Promise<void> {
+    await this._db.client.update({
+      where: { name },
+      data: { turnover: { increment: amount } }
+    })
+  }
+
+  private _buildLogoPath(client: Client): Client {
+    if (!client.logo) return client
+    return {
+      ...client,
+      logo: join('/', process.env['LOGOS_FOLDER'], client.logo)
+    }
   }
 
   private _deleteLogo(filename: string): void {
