@@ -52,15 +52,17 @@ export class InvoicesService {
 
   public async findAll(
     userId: number,
-    { status, client }: GetInvoicesQueryDto
+    { status, client, limit }: GetInvoicesQueryDto
   ): Promise<Invoice[]> {
     return this._db.invoice.findMany({
+      take: limit,
       where: { user: { id: userId }, status: status, to: { name: client } },
       include: {
         from: { include: { address: true } },
         to: { include: { address: true } },
         terms: true
-      }
+      },
+      orderBy: { createdAt: 'desc' }
     })
   }
 
