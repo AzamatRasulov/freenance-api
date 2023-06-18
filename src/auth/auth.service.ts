@@ -9,11 +9,11 @@ import * as argon from 'argon2'
 import to from 'await-to-js'
 import { DbService } from 'src/db/db.service'
 import { AccountValidationDto } from './dto/account-validation.dto'
+import { JwtDto } from './dto/jwt.dto'
 import { RefreshTokenDto } from './dto/refresh-token.dto'
 import { SignInDto } from './dto/sign-in.dto'
 import { SignUpDto } from './dto/sign-up.dto'
 import { JwtPayload } from './types/jwt-payload'
-import { SignInResponse } from './types/sign-in.response'
 
 @Injectable()
 export class AuthService {
@@ -46,7 +46,7 @@ export class AuthService {
   public async signIn(
     { email, password }: SignInDto,
     securityKey: 'password' | 'refreshToken' = 'password'
-  ): Promise<SignInResponse> {
+  ): Promise<JwtDto> {
     const user = await this._db.user.findUnique({ where: { email } })
 
     if (!user || !(await argon.verify(user[securityKey] as string, password))) {
@@ -62,7 +62,7 @@ export class AuthService {
 
   public async refreshToken({
     refreshToken
-  }: RefreshTokenDto): Promise<SignInResponse> {
+  }: RefreshTokenDto): Promise<JwtDto> {
     const [error, payload] = await to<JwtPayload>(
       this._jwt.verifyAsync(refreshToken, {
         secret: this._config.get('JWT_REFRESH_SECRET')
@@ -84,7 +84,7 @@ export class AuthService {
   private async _generateTokens(
     userId: number,
     email: string
-  ): Promise<SignInResponse> {
+  ): Promise<JwtDto> {
     const [accessToken, refreshToken] = await Promise.all([
       this._jwt.signAsync(
         { sub: userId, email },

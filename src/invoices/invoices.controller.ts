@@ -13,7 +13,7 @@ import {
   UseGuards
 } from '@nestjs/common'
 import { AuthGuard } from '@nestjs/passport'
-import { ApiBody, ApiResponse, ApiTags } from '@nestjs/swagger'
+import { ApiBearerAuth, ApiBody, ApiResponse, ApiTags } from '@nestjs/swagger'
 import { Invoice } from '@prisma/client'
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime'
 import to from 'await-to-js'
@@ -28,6 +28,7 @@ import { InvoicesService } from './invoices.service'
 
 @ApiTags('Invoices')
 @UseGuards(AuthGuard('jwt'))
+@ApiBearerAuth('jwt')
 @Controller('invoices')
 export class InvoicesController {
   constructor(private readonly _service: InvoicesService) {}

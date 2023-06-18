@@ -13,11 +13,10 @@ import { PrismaClientKnownRequestError } from '@prisma/client/runtime'
 import to from 'await-to-js'
 import { AuthService } from './auth.service'
 import { AccountValidationDto } from './dto/account-validation.dto'
+import { JwtDto } from './dto/jwt.dto'
 import { RefreshTokenDto } from './dto/refresh-token.dto'
 import { SignInDto } from './dto/sign-in.dto'
 import { SignUpDto } from './dto/sign-up.dto'
-import { TokenDtoTransformerPipe } from './pipes/token-dto-transformer.pipe'
-import { SignInResponse } from './types/sign-in.response'
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -46,11 +45,12 @@ export class AuthController {
   }
 
   @Get('token')
-  public async signIn(
-    @Query(TokenDtoTransformerPipe)
-    dto: SignInDto | RefreshTokenDto
-  ): Promise<SignInResponse> {
-    if (dto instanceof RefreshTokenDto) return this._service.refreshToken(dto)
+  public async signIn(@Query() dto: SignInDto): Promise<JwtDto> {
     return this._service.signIn(dto)
+  }
+
+  @Get('token/new')
+  public async refreshToken(@Query() dto: RefreshTokenDto): Promise<JwtDto> {
+    return this._service.refreshToken(dto)
   }
 }

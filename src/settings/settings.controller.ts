@@ -9,7 +9,7 @@ import {
   UseInterceptors
 } from '@nestjs/common'
 import { AuthGuard } from '@nestjs/passport'
-import { ApiConsumes, ApiTags } from '@nestjs/swagger'
+import { ApiBearerAuth, ApiConsumes, ApiTags } from '@nestjs/swagger'
 import { BearerDecoded } from 'src/auth/decorators/bearer-decoded.decorator'
 import { JwtPayload } from 'src/auth/types/jwt-payload'
 import { ProfileDto } from 'src/core/dto/profile.dto'
@@ -18,6 +18,7 @@ import { SettingsService } from './settings.service'
 
 @ApiTags('Settings')
 @UseGuards(AuthGuard('jwt'))
+@ApiBearerAuth('jwt')
 @Controller()
 export class SettingsController {
   constructor(private readonly _service: SettingsService) {}
