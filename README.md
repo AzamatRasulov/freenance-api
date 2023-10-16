@@ -2,7 +2,7 @@
 
 ## Description
 
-REST API for [Angular assessment project]https://github.com/users/rasulovdev/projects/3?pane=info).
+REST API for [Angular assessment project](https://github.com/users/rasulovdev/projects/3?pane=info).
 
 Covers JWT auth, CRUD, file upload and inter-entity relationships. Features User Profile, Clients and Invoices.
 
